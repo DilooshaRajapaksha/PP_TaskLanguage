@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskLang++ Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141416;
+    --surface2: #1c1c1f;
+    --surface3: #242428;
+    --border: #2a2a2e;
+    --border2: #3a3a3f;
+    --text: #f0f0f2;
+    --text2: #9090a0;
+    --text3: #5a5a6a;
+    --accent: #7c6ef5;
+    --accent2: #9b8ff7;
+    --accent-dim: rgba(124,110,245,0.12);
+    --green: #3dd68c;
+    --green-dim: rgba(61,214,140,0.1);
+    --red: #f56e6e;
+    --red-dim: rgba(245,110,110,0.1);
+    --amber: #f5c26e;
+    --amber-dim: rgba(245,194,110,0.1);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--text3); }
+  .nav-badge {
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent2);
+    border: 1px solid rgba(124,110,245,0.25);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: var(--mono);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    flex: 1;
+    height: calc(100vh - 56px);
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+  }
+  .left-panel::-webkit-scrollbar { width: 4px; }
+  .left-panel::-webkit-scrollbar-track { background: transparent; }
+  .left-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .panel-section {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-section:last-child { border-bottom: none; flex: 1; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: var(--sans);
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .field input::placeholder { color: var(--text3); }
+  .field select option { background: var(--surface3); }
+  .field input[type="time"] { font-family: var(--mono); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── SCHEDULE TABS ── */
+  .schedule-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    padding: 3px;
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+  }
+  .stab {
+    flex: 1;
+    padding: 5px 4px;
+    font-size: 11px;
+    font-weight: 500;
+    border: none;
+    background: none;
+    color: var(--text3);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .stab.active {
+    background: var(--accent);
+    color: white;
+  }
+  .stab:not(.active):hover { color: var(--text2); background: var(--surface3); }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-secondary {
+    padding: 8px 16px;
+    background: var(--surface3);
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--border2); background: var(--surface3); }
+
+  .btn-green {
+    width: 100%;
+    padding: 10px;
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(61,214,140,0.2);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .btn-green:hover { background: rgba(61,214,140,0.18); }
+
+  /* ── TASK LIST ── */
+  .tasks-area { padding: 1.25rem 1.5rem; flex: 1; overflow-y: auto; }
+  .tasks-area::-webkit-scrollbar { width: 4px; }
+  .tasks-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+
+  .task-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    animation: slideIn 0.2s ease;
+    position: relative;
+  }
+  .task-card:hover { border-color: var(--border2); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .task-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .task-card-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+  }
+  .task-card-remove {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.1s;
+  }
+  .task-card-remove:hover { color: var(--red); }
+  .task-card-meta {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.8;
+    font-family: var(--mono);
+  }
+  .task-card-meta span { color: var(--text2); }
+
+  .pill {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 500;
+    margin-right: 4px;
+    font-family: var(--sans);
+  }
+  .pill-dep { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,194,110,0.2); }
+  .pill-cond { background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,214,140,0.2); }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .right-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .right-title { font-size: 13px; font-weight: 500; color: var(--text2); }
+
+  .toolbar { display: flex; gap: 8px; align-items: center; }
+
+  .copy-btn {
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+  .save-btn {
+    padding: 6px 14px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(124,110,245,0.3);
+    border-radius: var(--radius);
+    color: var(--accent2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .save-btn:hover { background: rgba(124,110,245,0.2); }
+
+  /* ── CODE EDITOR ── */
+  .code-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: #c0c0d0;
+  }
+  .code-area::-webkit-scrollbar { width: 6px; }
+  .code-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .line { display: flex; }
+  .ln {
+    min-width: 36px;
+    color: var(--text3);
+    font-size: 12px;
+    text-align: right;
+    padding-right: 16px;
+    user-select: none;
+    margin-top: 1px;
+  }
+  .code-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text3);
+    font-family: var(--sans);
+    text-align: center;
+    gap: 10px;
+  }
+  .code-placeholder h3 { font-size: 16px; font-weight: 500; color: var(--text2); }
+  .code-placeholder p { font-size: 13px; line-height: 1.6; max-width: 300px; }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-green { background: var(--green); }
+  .dot-red { background: var(--red); }
+  .dot-amber { background: var(--amber); }
+  .dot-gray { background: var(--text3); }
+
+  /* ── INSTRUCTIONS PANEL ── */
+  .instructions {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .instr-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .instr-steps { display: flex; gap: 8px; flex-wrap: wrap; }
+  .instr-step {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text2);
+    background: var(--surface2);
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .instr-step .num {
+    background: var(--accent-dim);
+    color: var(--accent2);
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+
+  .hidden { display: none; }
+
+  /* Syntax colors */
+  .kw  { color: #9b8ff7; font-weight: 700; }
+  .str { color: #3dd68c; }
+  .tm  { color: #f5c26e; font-weight: 500; }
+  .id  { color: #7eb8f7; }
+  .cm  { color: #4a4a5a; font-style: italic; }
+  .br  { color: #f0f0f2; }
+
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; height: auto; }
+    .right-panel { height: 60vh; }
+  }
+
+  /* ── NAV BUTTONS ── */
+  .nav-right { display: flex; align-items: center; gap: 8px; }
+  .btn-nav {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 13px; font-size: 12px; font-weight: 600;
+    border-radius: var(--radius); cursor: pointer;
+    font-family: var(--sans); transition: all 0.15s; border: 1px solid transparent;
+  }
+  .btn-nav-email { background: var(--green-dim); color: var(--green); border-color: rgba(61,214,140,0.25); }
+  .btn-nav-email:hover { background: rgba(61,214,140,0.2); }
+  .btn-nav-run { background: var(--accent-dim); color: var(--accent2); border-color: rgba(124,110,245,0.3); }
+  .btn-nav-run:hover { background: rgba(124,110,245,0.2); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+    z-index: 1000; display: none;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 1.75rem;
+    max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    animation: mIn 0.2s ease;
+  }
+  @keyframes mIn { from { opacity:0; transform:scale(0.95) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; }
+  .modal-title { font-size:16px; font-weight:600; }
+  .modal-close { background:none; border:none; color:var(--text3); cursor:pointer; font-size:20px; line-height:1; transition:color 0.1s; }
+  .modal-close:hover { color:var(--text); }
+  .modal .field { margin-bottom:11px; }
+  .modal .field label { display:block; font-size:12px; color:var(--text2); margin-bottom:4px; font-weight:500; }
+  .modal .field input, .modal .field textarea {
+    width:100%; background:var(--surface2); border:1px solid var(--border2);
+    border-radius:var(--radius); padding:8px 12px; font-size:13px;
+    color:var(--text); font-family:var(--sans); transition:border-color 0.15s;
+  }
+  .modal .field input:focus, .modal .field textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+  .modal .field textarea { resize:vertical; min-height:65px; }
+  .modal-hint { font-size:11.5px; color:var(--text3); background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:9px 12px; margin-bottom:14px; line-height:1.6; }
+  .modal-hint strong { color:var(--text2); }
+  .modal-section-title { font-size:10px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.1em; margin:14px 0 8px; }
+  .email-status { font-size:12.5px; padding:9px 12px; border-radius:var(--radius); margin-top:10px; display:none; }
+  .email-status.success { display:block; background:var(--green-dim); color:var(--green); border:1px solid rgba(61,214,140,0.25); }
+  .email-status.error   { display:block; background:var(--red-dim);   color:var(--red);   border:1px solid rgba(245,110,110,0.25); }
+  .email-status.loading { display:block; background:var(--accent-dim); color:var(--accent2); border:1px solid rgba(124,110,245,0.25); }
+
+  /* ── PARSER OUTPUT ── */
+  .parser-output {
+    font-family:var(--mono); font-size:12px; line-height:1.7;
+    background:var(--surface2); border:1px solid var(--border2);
+    border-radius:var(--radius); padding:12px; margin-top:10px;
+    max-height:260px; overflow-y:auto; white-space:pre-wrap;
+    color:var(--text2);
+  }
+  .parser-output .p-success { color:var(--green); }
+  .parser-output .p-error   { color:var(--red); }
+  .parser-output .p-warn    { color:var(--amber); }
+
+  /* ── SCHEDULE NOTIF BADGE ── */
+  .task-card.notif-armed { border-color: rgba(61,214,140,0.35); }
+  .notif-badge {
+    font-size:9px; font-weight:600; font-family:var(--sans);
+    background:var(--green-dim); color:var(--green);
+    border:1px solid rgba(61,214,140,0.25);
+    padding:1px 6px; border-radius:20px; margin-left:6px;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:24px; right:24px; z-index:9999;
+    padding:10px 16px; border-radius:var(--radius); font-size:13px;
+    font-weight:500; font-family:var(--sans);
+    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    opacity:0; transform:translateY(6px);
+    transition:all 0.2s; pointer-events:none;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">TaskLang<span>++</span> Builder</div>
+  <div class="nav-right">
+    <div class="nav-badge">SE2052 Assignment</div>
+    <button class="btn-nav btn-nav-run" onclick="openRunModal()">▶ Run Parser</button>
+    <button class="btn-nav btn-nav-email" onclick="openEmailModal()">✉ Email Notify</button>
+  </div>
+</nav>
+
+<div class="app">
+
+  <!-- ════════ LEFT PANEL ════════ -->
+  <div class="left-panel">
+
+    <!-- Task Form -->
+    <div class="panel-section">
+      <div class="section-label">Add New Task</div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>Task name *</label>
+          <input type="text" id="f-name" placeholder="e.g. backupDB" oninput="livePreview()">
+        </div>
+        <div class="field">
+          <label>Script / command *</label>
+          <input type="text" id="f-script" placeholder='e.g. backup.sh' oninput="livePreview()">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Schedule</label>
+        <div class="schedule-tabs">
+          <button class="stab active" onclick="setSchedule('daily',this)">Every Day</button>
+          <button class="stab" onclick="setSchedule('weekly',this)">Every Week</button>
+          <button class="stab" onclick="setSchedule('once',this)">At Time</button>
+          <button class="stab" onclick="setSchedule('none',this)">None</button>
+        </div>
+
+        <div id="sch-daily">
+          <div class="field">
+            <label>Run at</label>
+            <input type="time" id="f-daily-time" value="06:00" oninput="livePreview()">
+          </div>
+        </div>
+
+        <div id="sch-weekly" class="hidden">
+          <div class="two-col">
+            <div class="field">
+              <label>Day</label>
+              <select id="f-week-day" onchange="livePreview()">
+                <option>MONDAY</option><option>TUESDAY</option>
+                <option>WEDNESDAY</option><option>THURSDAY</option>
+                <option>FRIDAY</option><option>SATURDAY</option>
+                <option>SUNDAY</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>At time</label>
+              <input type="time" id="f-week-time" value="03:00" oninput="livePreview()">
+            </div>
+          </div>
+        </div>
+
+        <div id="sch-once" class="hidden">
+          <div class="field">
+            <label>At time</label>
+            <input type="time" id="f-once-time" value="09:00" oninput="livePreview()">
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="field">
+          <label>Depends on</label>
+          <select id="f-depends" onchange="livePreview()">
+            <option value="">— none —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Condition</label>
+          <select id="f-condition" onchange="livePreview()">
+            <option value="">— none —</option>
+            <option value="success">IF success</option>
+            <option value="failure">IF failure</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="addTask()">+ Add Task</button>
+    </div>
+
+    <!-- Task List -->
+    <div class="tasks-area">
+      <div class="section-label">Tasks (<span id="task-count">0</span>)</div>
+      <div id="task-list">
+        <div class="empty-state">
+          <div class="empty-icon">□</div>
+          <div>No tasks yet.<br>Add your first task above.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════ RIGHT PANEL ════════ -->
+  <div class="right-panel">
+
+    <div class="right-top">
+      <div class="right-title">Generated Code — <span id="filename-label" style="font-family:var(--mono); color:var(--accent2);">untitled.tl</span></div>
+      <div class="toolbar">
+        <button class="copy-btn" onclick="copyCode()">Copy</button>
+        <button class="save-btn" onclick="saveFile()">Save .tl file</button>
+      </div>
+    </div>
+
+    <div class="code-area" id="code-area">
+      <div class="code-placeholder" id="placeholder">
+        <h3>Your code appears here</h3>
+        <p>Add tasks on the left and they will instantly appear as TaskLang++ code.</p>
+      </div>
+      <div id="code-lines" class="hidden"></div>
+    </div>
+
+    <div class="status-bar" id="status-bar">
+      <div class="status-item"><div class="dot dot-gray"></div> Ready</div>
+    </div>
+
+    <div class="instructions">
+      <div class="instr-title">How to run your generated file</div>
+      <div class="instr-steps">
+        <div class="instr-step"><div class="num">1</div>Save .tl file → put it in your tests/ folder</div>
+        <div class="instr-step"><div class="num">2</div>Open WSL terminal</div>
+        <div class="instr-step"><div class="num">3</div>cd into your src/ folder</div>
+        <div class="instr-step"><div class="num">4</div>./tasklang ../tests/yourfile.tl</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════ EMAIL MODAL ════════ -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✉ Email Notification Setup</div>
+      <button class="modal-close" onclick="closeModal('email-modal')">✕</button>
+    </div>
+    <div class="modal-hint">
+      Emails fire <strong>automatically</strong> when a task's scheduled time arrives — no button needed. Fill in your EmailJS credentials once and they are saved for the session.
+    </div>
+    <div class="modal-section-title">EmailJS Credentials</div>
+    <div class="field"><label>Service ID</label><input type="text" id="ejs-service" placeholder="service_85us58k"></div>
+    <div class="field"><label>Template ID</label><input type="text" id="ejs-template" placeholder="template_fwxhycd"></div>
+    <div class="field"><label>Public Key</label><input type="text" id="ejs-pubkey" placeholder="zcbfjce_zWIncFxX2"></div>
+    <div class="modal-section-title">Where to send</div>
+    <div class="field"><label>Recipient email</label><input type="email" id="ejs-to" placeholder="it24610798@my.sliit.lk"></div>
+    <button class="btn-primary" onclick="saveEmailConfig()" style="margin-top:8px">Save & Arm Notifications</button>
+    <div class="email-status" id="email-config-status"></div>
+    <div class="modal-section-title">Send manually now</div>
+    <div class="field"><label>Optional message</label><textarea id="ejs-msg" placeholder="Your TaskLang++ program is ready!"></textarea></div>
+    <button class="btn-green" onclick="sendEmailNow()" id="send-now-btn">Send Email Now</button>
+    <div class="email-status" id="email-send-status"></div>
+  </div>
+</div>
+
+<!-- ════════ RUN PARSER MODAL ════════ -->
+<div class="modal-overlay" id="run-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">▶ Run Parser (WSL)</div>
+      <button class="modal-close" onclick="closeModal('run-modal')">✕</button>
+    </div>
+    <div class="modal-hint">
+      Sends your generated code to the <strong>Node.js server</strong> running in WSL, which runs it through your <strong>./tasklang</strong> binary and returns the output here.
+      <br><br>
+      <strong>First time:</strong> In WSL, run <code style="color:var(--accent2)">cd src && node server.js</code>
+    </div>
+    <div class="field"><label>Server URL</label><input type="text" id="server-url" value="http://localhost:3000/run"></div>
+    <button class="btn-primary" onclick="runParser()" id="run-btn" style="margin-top:8px">▶ Run Now</button>
+    <div id="parser-output" class="parser-output hidden"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let tasks = [];
+  let scheduleType = 'daily';
+
+  // ── EmailJS config (saved in session) ─────────────
+  let ejsConfig = { service:'', template:'', pubkey:'', to:'' };
+  let notifArmed = false;
+
+  // ── Schedule toggling ──────────────────────────────
+  function setSchedule(type, btn) {
+    scheduleType = type;
+    document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['daily','weekly','once'].forEach(t => {
+      const el = document.getElementById('sch-' + t);
+      if (el) el.classList.toggle('hidden', t !== type);
+    });
+    livePreview();
+  }
+
+  function getScheduleStr() {
+    if (scheduleType === 'daily') {
+      return 'EVERY DAY AT ' + (document.getElementById('f-daily-time').value || '06:00');
+    } else if (scheduleType === 'weekly') {
+      const d = document.getElementById('f-week-day').value;
+      const t = document.getElementById('f-week-time').value || '03:00';
+      return 'EVERY WEEK ON ' + d + ' AT ' + t;
+    } else if (scheduleType === 'once') {
+      return 'AT ' + (document.getElementById('f-once-time').value || '09:00');
+    }
+    return '';
+  }
+
+  // ── Add / Remove tasks ─────────────────────────────
+  function addTask() {
+    const name   = document.getElementById('f-name').value.trim();
+    const script = document.getElementById('f-script').value.trim();
+    if (!name || !script) { showToast('Task name and script are required.', 'error'); return; }
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)) { showToast('Name must start with a letter.', 'error'); return; }
+    if (tasks.find(t => t.name === name)) { showToast('"' + name + '" already exists.', 'error'); return; }
+
+    const dep      = document.getElementById('f-depends').value;
+    const condition= document.getElementById('f-condition').value;
+    const schedule = getScheduleStr();
+
+    tasks.push({ name, script, schedule, dep, condition });
+    document.getElementById('f-name').value    = '';
+    document.getElementById('f-script').value  = '';
+    document.getElementById('f-depends').value = '';
+    document.getElementById('f-condition').value = '';
+
+    refreshDepsDropdown();
+    renderTaskList();
+    renderCode();
+    showToast('Task "' + name + '" added!', 'success');
+  }
+
+  function removeTask(i) {
+    const name = tasks[i].name;
+    tasks.splice(i, 1);
+    refreshDepsDropdown();
+    renderTaskList();
+    renderCode();
+    showToast('Removed "' + name + '"', 'info');
+  }
+
+  function refreshDepsDropdown() {
+    const sel = document.getElementById('f-depends');
+    sel.innerHTML = '<option value="">— none —</option>';
+    tasks.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t.name; o.textContent = t.name;
+      sel.appendChild(o);
+    });
+  }
+
+  // ── Render task list ───────────────────────────────
+  function renderTaskList() {
+    document.getElementById('task-count').textContent = tasks.length;
+    const list = document.getElementById('task-list');
+    if (tasks.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">□</div><div>No tasks yet.<br>Add your first task above.</div></div>';
+      return;
+    }
+    list.innerHTML = tasks.map((t, i) => {
+      const armed = notifArmed && t.schedule;
+      return `
+      <div class="task-card${armed ? ' notif-armed' : ''}">
+        <div class="task-card-header">
+          <div class="task-card-name">${t.name}${armed ? '<span class="notif-badge">NOTIF ON</span>' : ''}</div>
+          <button class="task-card-remove" onclick="removeTask(${i})">✕</button>
+        </div>
+        <div class="task-card-meta">
+          RUN <span>"${t.script}"</span><br>
+          ${t.schedule ? 'SCHEDULE <span>' + t.schedule + '</span><br>' : ''}
+          ${t.dep ? '<span class="pill pill-dep">AFTER ' + t.dep + '</span>' : ''}
+          ${t.condition ? '<span class="pill pill-cond">IF ' + t.condition + '</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Build code ─────────────────────────────────────
+  function buildCode() {
+    if (tasks.length === 0) return '';
+    return tasks.map(t => {
+      let b = 'TASK ' + t.name + ' {\n';
+      b += '    RUN "' + t.script + '"\n';
+      if (t.schedule)  b += '    ' + t.schedule + '\n';
+      if (t.dep)       b += '    AFTER ' + t.dep + '\n';
+      if (t.condition) b += '    IF ' + t.condition + '\n';
+      b += '}';
+      return b;
+    }).join('\n\n');
+  }
+
+  // ── Syntax highlight ───────────────────────────────
+  function highlight(code) {
+    const KW = ['TASK','RUN','EVERY','DAY','WEEK','ON','AT','AFTER','BEFORE','DEPENDS','IF','SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','success','failure'];
+    let out = '';
+    code.split('\n').forEach((rawLine, li) => {
+      let line = rawLine
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"([^"]*)"/g, '<span class="str">"$1"</span>')
+        .replace(/\b(\d{2}:\d{2})\b/g, '<span class="tm">$1</span>');
+      KW.forEach(k => { line = line.replace(new RegExp('\\b'+k+'\\b','g'), '<span class="kw">'+k+'</span>'); });
+      line = line.replace(/\{/g,'<span class="br">{</span>').replace(/\}/g,'<span class="br">}</span>');
+      out += '<div class="line"><span class="ln">'+(li+1)+'</span><span>'+line+'</span></div>';
+    });
+    return out;
+  }
+
+  // ── Issue detection ────────────────────────────────
+  function detectIssues() {
+    const issues = [];
+    for (let i = 0; i < tasks.length; i++)
+      for (let j = i+1; j < tasks.length; j++)
+        if (tasks[i].dep === tasks[j].name && tasks[j].dep === tasks[i].name)
+          issues.push({ type:'error', msg:'Circular: '+tasks[i].name+' ↔ '+tasks[j].name });
+    tasks.forEach(t => {
+      if (t.dep && !tasks.find(x => x.name === t.dep))
+        issues.push({ type:'warn', msg:'"'+t.dep+'" not found (ref by '+t.name+')' });
+    });
+    return issues;
+  }
+
+  // ── Render code panel ──────────────────────────────
+  function renderCode() {
+    const code = buildCode();
+    const placeholder = document.getElementById('placeholder');
+    const lines       = document.getElementById('code-lines');
+    const statusBar   = document.getElementById('status-bar');
+    if (!code) {
+      placeholder.classList.remove('hidden'); lines.classList.add('hidden');
+      statusBar.innerHTML = '<div class="status-item"><div class="dot dot-gray"></div> Ready</div>';
+      return;
+    }
+    placeholder.classList.add('hidden'); lines.classList.remove('hidden');
+    lines.innerHTML = highlight(code);
+    const issues = detectIssues();
+    let sb = `<div class="status-item"><div class="dot dot-green"></div> ${tasks.length} task${tasks.length>1?'s':''}</div>`;
+    if (issues.length === 0) {
+      sb += '<div class="status-item"><div class="dot dot-green"></div> No issues</div>';
+    } else {
+      issues.forEach(iss => {
+        sb += `<div class="status-item"><div class="dot ${iss.type==='error'?'dot-red':'dot-amber'}"></div> ${iss.msg}</div>`;
+      });
+    }
+    if (notifArmed) sb += '<div class="status-item"><div class="dot dot-green"></div> Notif armed</div>';
+    statusBar.innerHTML = sb;
+  }
+
+  function livePreview() {}
+
+  // ── Copy / Save ────────────────────────────────────
+  function copyCode() {
+    const code = buildCode();
+    if (!code) { showToast('No code to copy yet.', 'error'); return; }
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  }
+
+  function saveFile() {
+    const code = buildCode();
+    if (!code) { showToast('No tasks to save yet.', 'error'); return; }
+    const name = prompt('Save as filename:', 'myprogram.tl');
+    if (!name) return;
+    const fname = name.endsWith('.tl') ? name : name + '.tl';
+    const blob = new Blob([code], { type:'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = fname; a.click();
+    document.getElementById('filename-label').textContent = fname;
+    showToast('Saved ' + fname, 'success');
+  }
+
+  // ── MODAL helpers ──────────────────────────────────
+  function openEmailModal() {
+    document.getElementById('ejs-service').value  = ejsConfig.service;
+    document.getElementById('ejs-template').value = ejsConfig.template;
+    document.getElementById('ejs-pubkey').value   = ejsConfig.pubkey;
+    document.getElementById('ejs-to').value       = ejsConfig.to;
+    document.getElementById('email-config-status').className = 'email-status';
+    document.getElementById('email-send-status').className   = 'email-status';
+    document.getElementById('email-modal').classList.add('open');
+  }
+
+  function openRunModal() {
+    document.getElementById('parser-output').classList.add('hidden');
+    document.getElementById('run-modal').classList.add('open');
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // ── EMAIL CONFIG ───────────────────────────────────
+  function saveEmailConfig() {
+    ejsConfig.service  = document.getElementById('ejs-service').value.trim();
+    ejsConfig.template = document.getElementById('ejs-template').value.trim();
+    ejsConfig.pubkey   = document.getElementById('ejs-pubkey').value.trim();
+    ejsConfig.to       = document.getElementById('ejs-to').value.trim();
+
+    if (!ejsConfig.service || !ejsConfig.template || !ejsConfig.pubkey || !ejsConfig.to) {
+      setEmailStatus('email-config-status','error','⚠ Fill in all 4 fields to arm notifications.');
+      return;
+    }
+    notifArmed = true;
+    setEmailStatus('email-config-status','success','✅ Notifications armed! Emails will fire at each task\'s scheduled time.');
+    renderTaskList(); renderCode();
+    showToast('Email notifications armed!', 'success');
+  }
+
+  // ── SCHEDULED EMAIL TRIGGER ────────────────────────
+  // Checks every 60 seconds — fires email when current time matches a task's schedule
+  setInterval(() => {
+    if (!notifArmed) return;
+    const now = new Date();
+    const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const today = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'][now.getDay()];
+
+    tasks.forEach(t => {
+      if (!t.schedule) return;
+      let match = false;
+      if (t.schedule.startsWith('EVERY DAY AT')) {
+        const time = t.schedule.replace('EVERY DAY AT ','').trim();
+        match = time === hhmm;
+      } else if (t.schedule.startsWith('EVERY WEEK ON')) {
+        const parts = t.schedule.replace('EVERY WEEK ON ','').split(' AT ');
+        match = parts[0] === today && parts[1] === hhmm;
+      } else if (t.schedule.startsWith('AT ')) {
+        const time = t.schedule.replace('AT ','').trim();
+        match = time === hhmm;
+      }
+      if (match) fireScheduledEmail(t);
+    });
+  }, 60000);
+
+  async function fireScheduledEmail(task) {
+    try {
+      emailjs.init(ejsConfig.pubkey);
+      await emailjs.send(ejsConfig.service, ejsConfig.template, {
+        to_email:   ejsConfig.to,
+        task_count: '1',
+        task_names: task.name,
+        task_code:  buildCode(),
+        message:    'Scheduled task "' + task.name + '" is due now! (' + task.schedule + ')',
+        timestamp:  new Date().toLocaleString(),
+      });
+      showToast('📧 Email sent for task: ' + task.name, 'success');
+    } catch (err) {
+      showToast('Email failed for ' + task.name + ': ' + (err.text || err.message), 'error');
+    }
+  }
+
+  // ── MANUAL EMAIL SEND ──────────────────────────────
+  async function sendEmailNow() {
+    const s = document.getElementById('ejs-service').value.trim();
+    const t = document.getElementById('ejs-template').value.trim();
+    const k = document.getElementById('ejs-pubkey').value.trim();
+    const to= document.getElementById('ejs-to').value.trim();
+    const msg = document.getElementById('ejs-msg').value.trim();
+
+    if (!s || !t || !k || !to) {
+      setEmailStatus('email-send-status','error','⚠ Fill in all credentials first.');
+      return;
+    }
+    const code = buildCode();
+    if (!code) { setEmailStatus('email-send-status','error','⚠ Add at least one task first.'); return; }
+
+    setEmailStatus('email-send-status','loading','⏳ Sending...');
+    document.getElementById('send-now-btn').disabled = true;
+    try {
+      emailjs.init(k);
+      await emailjs.send(s, t, {
+        to_email:   to,
+        task_count: String(tasks.length),
+        task_names: tasks.map(x => x.name).join(', '),
+        task_code:  code,
+        message:    msg || 'Your TaskLang++ program has been generated.',
+        timestamp:  new Date().toLocaleString(),
+      });
+      setEmailStatus('email-send-status','success','✅ Email sent to ' + to + '!');
+      showToast('Email sent!', 'success');
+    } catch (err) {
+      setEmailStatus('email-send-status','error','❌ Failed: ' + (err.text || err.message));
+    }
+    document.getElementById('send-now-btn').disabled = false;
+  }
+
+  function setEmailStatus(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = 'email-status ' + type;
+    el.textContent = msg;
+  }
+
+  // ── RUN PARSER via Node.js server ─────────────────
+  async function runParser() {
+    const code = buildCode();
+    if (!code) { showToast('Add at least one task first.', 'error'); return; }
+
+    const url = document.getElementById('server-url').value.trim();
+    const out = document.getElementById('parser-output');
+    const btn = document.getElementById('run-btn');
+
+    out.classList.remove('hidden');
+    out.innerHTML = '<span style="color:var(--text3)">Running parser...</span>';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+
+      let html = '';
+      if (data.stdout) html += '<span class="p-success">' + esc(data.stdout) + '</span>';
+      if (data.stderr) html += '<span class="p-error">'   + esc(data.stderr) + '</span>';
+      if (!html) html = '<span class="p-warn">No output returned.</span>';
+      out.innerHTML = html;
+      showToast(data.exitCode === 0 ? 'Parser ran successfully!' : 'Parser returned errors.', data.exitCode === 0 ? 'success' : 'error');
+    } catch (err) {
+      out.innerHTML = '<span class="p-error">Could not connect to server.\n\nMake sure you ran:\n  cd src\n  node server.js\n\nin your WSL terminal.\n\nError: ' + esc(err.message) + '</span>';
+      showToast('Cannot reach server — is it running?', 'error');
+    }
+    btn.disabled = false;
+  }
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── Toast ──────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    const styles = {
+      success: 'background:#0d2e1c;color:#3dd68c;border:1px solid rgba(61,214,140,0.3)',
+      error:   'background:#2e0d0d;color:#f56e6e;border:1px solid rgba(245,110,110,0.3)',
+      info:    'background:#1a1a2e;color:#9b8ff7;border:1px solid rgba(155,143,247,0.3)',
+    };
+    clearTimeout(toastTimer);
+    t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:500;font-family:var(--sans);box-shadow:0 4px 20px rgba(0,0,0,0.5);transition:all 0.2s;' + (styles[type] || styles.info);
+    t.textContent = msg;
+    requestAnimationFrame(() => { t.style.opacity='1'; t.style.transform='translateY(0)'; });
+    toastTimer = setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(6px)'; }, 3000);
+  }
+
+  renderTaskList();
+  renderCode();
+</script>
+</body>
+</html>
